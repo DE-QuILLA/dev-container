@@ -1,0 +1,5 @@
+gcloud --version
+terraform --version
+helm version
+kubectl version
+kubectl get pods
