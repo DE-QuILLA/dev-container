@@ -58,3 +58,4 @@ RUN echo 'cat ./motd' >> /etc/bash.bashrc
 
 # Default: allows for tidier commands
 ENTRYPOINT [ "/bin/bash", "-c" ]
+CMD [ "echo Your wish is my command!" ]
