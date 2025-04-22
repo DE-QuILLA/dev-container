@@ -3,3 +3,7 @@ terraform --version
 helm version
 kubectl version
 kubectl get pods
+echo "1. Make sure your cluster is up and running!"
+echo "2. Use alias 'my-gke' to connect to GKE!"
+echo "To change GKE access command, edit bashrc: sudo nano /etc/bash.bashrc "
+echo -e "3. Maybe run 'precommit install' in a git repo?\n"

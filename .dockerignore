@@ -1,5 +1,6 @@
 Dockerfile
 .gitignore
 start.sh
+test.sh
 .git/
 *.md
