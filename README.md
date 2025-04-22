@@ -7,11 +7,6 @@
     - key.json은 빌드타임에 컨테이너 안에 들어감
 
 ### TODOs
-- [ ] install script
-    - add start script to alias in the user's shell
-    - so it can be used from other directories
-    - and then check for image name existence -> build image
-- [ ] start script
-    - always --rm
-    - additional argument passed -> docker run,
-    - if not -> docker run -it
+- [x] install script
+- [x] start script / inclusive with install script
+- [ ] future errors... 😔
