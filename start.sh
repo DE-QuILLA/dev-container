@@ -7,28 +7,38 @@ dockerfile_dir="."
 CURR_DIR=$(pwd)
 
 # Defaults 
-infra_path=$(pwd)
-code_path=$(pwd)
-helm_path=$(pwd)
+infra_path="$CURR_DIR"
+code_path="$CURR_DIR"
+helm_path="$CURR_DIR"
+pk_path=""
 # DO NOT USE SHIFT HERE! ❌
 
 # Dashed args parsing
-while getopts "i:c:m:h:" opt; do
+while getopts "i:c:m:k:h:" opt; do
     case $opt in
         i) infra_path="$OPTARG" ;;
         c) code_path="$OPTARG" ;;
         m) helm_path="$OPTARG" ;;
+        k) pk_path="$OPTARG" ;;
         h) 
-            echo "Usage: $0 -i <infra-gitops path> -c <code-task path> -m <helm project path>"
+            echo "Usage: $0 -i <infra-gitops path> -c <code-task path> -m <helm project path> -k <private key path>"
             exit 0
             ;;
         \?) 
             echo "Invalid option: -$OPTARG" >&2
-            echo "Usage: $0 -i <infra-gitops path> -c <code-task path> -m <helm project path>" >&2
+            echo "Usage: $0 -i <infra-gitops path> -c <code-task path> -m <helm project path> -k <private key path>" >&2
             exit 1 
             ;;
     esac
 done
+
+# ssh key validity check
+if [[ -n "$pk_path" ]]; then
+    if ! ssh-keygen -l -f "$pk_path" >/dev/null 2>&1; then
+        echo "Invalid ssh key."
+        exit 1
+    fi
+fi
 
 # Exist check
 if [ ! -d "$infra_path" ] || [ ! -d "$helm_path" ] || [ ! -d "$code_path" ]; then
@@ -46,11 +56,14 @@ fi
 infra_path=$(realpath "$infra_path")
 code_path=$(realpath "$code_path")
 helm_path=$(realpath "$helm_path")
+pk_path=$(realpath "$pk_path")
+pk_basename=$(basename "$pk_path")
 
 # Paths inside the container
 infra_workdir="/app/infra-gitops"
 helm_workdir="/app/helm"
 code_workdir="/app/code-task"
+pk_mount="/root/.ssh/$pk_basename"
 
 # Check for image presence, decide whether or not to build
 if ! docker image inspect "$image_name" > /dev/null 2>&1; then
@@ -80,6 +93,8 @@ docker run -dt --name "$container_name" --rm \
     -v "$code_path":"$code_workdir" \
     -v "$infra_path":"$infra_workdir" \
     -v "$helm_path":"$helm_workdir" \
+    -v "$pk_path":"$pk_mount" \
+    -v "$pk_path.pub":"$pk_mount.pub" \
     "$image_name" \
     "tail -f /dev/null"
 

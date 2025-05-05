@@ -1,7 +1,8 @@
 ### 사용법
-- 빌드, 런 포함 통합 커맨드 : `./start.sh -i <infra-gitops 프로젝트 경로> -c <code-task 프로젝트 경로> -m <helm 프로젝트 경로>`
+- 빌드, 런 포함 통합 커맨드 : `./start.sh -i <infra-gitops 프로젝트 경로> -c <code-task 프로젝트 경로> -m <helm 프로젝트 경로> -k <프라이빗 키 경로>`
     - infra repo, codetask, helm 경로 입력 안하면 디폴트 ./로 입력됨.
     - infra, codetask는 깃리포여야 함.
+    - 프라이빗키: .pub 확장자를 빼고 넣어야합니다~ ssh, 깃커밋/푸시용 -> 넣을 경우 유효성 검사 체크함.
 - 이것저것 세팅 후 마지막으로 인터렉티브 bash 세션으로 진입함
 - 준비 끗...
 - kubectl:
