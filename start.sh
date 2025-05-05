@@ -5,16 +5,18 @@ container_name="dequila-cont"
 dockerfile_dir="."
 
 # Projects paths arguments
-terraform_path=$(realpath "${1:-$(pwd)}")
-helm_path=$(realpath "${2:-$(pwd)}")
+infra_path=$(realpath "${1:-$(pwd)}")
+code_path=$(realpath "${2:-$(pwd)}")
+helm_path=$(realpath "${3:-$(pwd)}")
 
-if [ ! -d "$terraform_path" ] || [ ! -d "$helm_path" ]; then
+if [ ! -d "$infra_path" ] || [ ! -d "$helm_path" ] || [ ! -d "$code_path" ]; then
     echo "Error: Paths are not valid."
     exit 1
 fi
 
-terraform_workdir="/app/terraform"
+infra_workdir="/app/infra-gitops"
 helm_workdir="/app/helm"
+code_workdir="/app/code-task"
 
 # Check for image presence, decide whether or not to build
 if ! docker image inspect "$image_name" > /dev/null 2>&1; then
@@ -40,4 +42,4 @@ fi
 
 # Run the container if all else went well
 echo "Running container '$container_name'"
-docker run -it --name "$container_name" --rm -v "$terraform_path":"$terraform_workdir" -v "$helm_path":"$helm_workdir" "$image_name" /bin/bash
+docker run -it --name "$container_name" --rm -v "$code_path":"$code_workdir" -v "$infra_path":"$infra_workdir" -v "$helm_path":"$helm_workdir" "$image_name" /bin/bash

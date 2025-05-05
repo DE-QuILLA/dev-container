@@ -1,8 +1,8 @@
-FROM python:3.12-slim-bookworm
+FROM python:3.11-slim-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV KUBECTL_VERSION=v1.31.0
-ENV TERRAFORM_VERSION=1.11.3
+ENV TERRAFORM_VERSION=1.11.1
 ENV HELM_VERSION=3.16.4
 
 # Prerequisite
@@ -11,7 +11,8 @@ RUN apt update && apt install -y \
     ca-certificates \
     gnupg \
     curl \
-    unzip
+    unzip \
+    git
 
 # CLI setup
 RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
