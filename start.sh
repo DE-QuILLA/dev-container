@@ -4,16 +4,50 @@ image_name="dequila-image"
 container_name="dequila-cont"
 dockerfile_dir="."
 
-# Projects paths arguments
-infra_path=$(realpath "${1:-$(pwd)}")
-code_path=$(realpath "${2:-$(pwd)}")
-helm_path=$(realpath "${3:-$(pwd)}")
+CURR_DIR=$(pwd)
 
+# Defaults 
+infra_path=$(pwd)
+code_path=$(pwd)
+helm_path=$(pwd)
+# DO NOT USE SHIFT HERE! ❌
+
+# Dashed args parsing
+while getopts "i:c:m:h:" opt; do
+    case $opt in
+        i) infra_path="$OPTARG" ;;
+        c) code_path="$OPTARG" ;;
+        m) helm_path="$OPTARG" ;;
+        h) 
+            echo "Usage: $0 -i <infra-gitops path> -c <code-task path> -m <helm project path>"
+            exit 0
+            ;;
+        \?) 
+            echo "Invalid option: -$OPTARG" >&2
+            echo "Usage: $0 -i <infra-gitops path> -c <code-task path> -m <helm project path>" >&2
+            exit 1 
+            ;;
+    esac
+done
+
+# Exist check
 if [ ! -d "$infra_path" ] || [ ! -d "$helm_path" ] || [ ! -d "$code_path" ]; then
-    echo "Error: Paths are not valid."
+    echo "Error: Paths are not valid. Aborting..."
     exit 1
 fi
 
+# is-git-repo check. Prereq for pre-commit install
+# Currently it doesn't account for the helm path
+if [ ! -d "$infra_path/.git" ] || [ ! -d "$code_path/.git" ]; then
+    echo "👺 Some of the paths are not Git repo. Aborting..." >&2
+    exit 1
+fi
+
+infra_path=$(realpath "$infra_path")
+code_path=$(realpath "$code_path")
+helm_path=$(realpath "$helm_path")
+
+# Paths inside the container
 infra_workdir="/app/infra-gitops"
 helm_workdir="/app/helm"
 code_workdir="/app/code-task"
@@ -42,4 +76,33 @@ fi
 
 # Run the container if all else went well
 echo "Running container '$container_name'"
-docker run -it --name "$container_name" --rm -v "$code_path":"$code_workdir" -v "$infra_path":"$infra_workdir" -v "$helm_path":"$helm_workdir" "$image_name" /bin/bash
+docker run -dt --name "$container_name" --rm \
+    -v "$code_path":"$code_workdir" \
+    -v "$infra_path":"$infra_workdir" \
+    -v "$helm_path":"$helm_workdir" \
+    "$image_name" \
+    "tail -f /dev/null"
+
+# Pre-commit pre-setup
+echo "Resolving dubious ownership on repos..."
+git_cmd="git config --global --add safe.directory $infra_workdir && git config --global --add safe.directory $code_workdir"
+docker exec -it "$container_name" /bin/bash -c "$git_cmd"
+
+# Pre-commit setup
+echo "Setting up pre-commit in repos"
+precommit_cmd="cd $infra_workdir && pre-commit install --install-hooks && cd $code_workdir && pre-commit install --install-hooks"
+docker exec -it "$container_name" /bin/bash -c "$precommit_cmd"
+
+# Alias for fetching Kubectl config for later use
+echo "Adding aliases..."
+cluster_name="my-gke"
+region_name="asia-northeast3"
+project_name="my-code-vocab"
+get_conf="gcloud container clusters get-credentials $cluster_name --region $region_name --project $project_name"
+alias="alias kinit='$get_conf'"
+alias_cmd="echo \"$alias\" >> /etc/bash.bashrc"
+docker exec --user root -it "$container_name" /bin/bash -c "$alias_cmd"
+
+# Open interactive session
+echo "Opening an interactive session..."
+docker exec -it "$container_name" /bin/bash
