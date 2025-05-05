@@ -98,6 +98,9 @@ docker run -dt --name "$container_name" --rm \
     "$image_name" \
     "tail -f /dev/null"
 
+# Setup git to use ssh key
+docker exec -it "$container_name" /bin/bash -c "git config --global commit.gpgsign false"
+
 # Pre-commit pre-setup
 echo "Resolving dubious ownership on repos..."
 git_cmd="git config --global --add safe.directory $infra_workdir && git config --global --add safe.directory $code_workdir"
@@ -105,7 +108,7 @@ docker exec -it "$container_name" /bin/bash -c "$git_cmd"
 
 # Pre-commit setup
 echo "Setting up pre-commit in repos"
-precommit_cmd="cd $infra_workdir && pre-commit install --install-hooks && cd $code_workdir && pre-commit install --install-hooks"
+precommit_cmd="cd $infra_workdir && pre-commit install && cd $code_workdir && pre-commit install"
 docker exec -it "$container_name" /bin/bash -c "$precommit_cmd"
 
 # Alias for fetching Kubectl config for later use

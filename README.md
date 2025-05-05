@@ -14,6 +14,16 @@
     - ctrl+shift+p (Mac은 cmd+shift+p)에서 `Dev containers: Attach to running containers` 선택
     - /start.sh 로 생성한 dequila-cont 컨테이너 선택
     - 컨테이너를 리모트 dev 환경처럼 쓰는거심니다
+- 깃 커밋
+    - 커밋 사인을 안 하신다면 여기는 무시하셔도 됩니다
+    - **(디폴트)** ssh키를 사용하신다면 `git config --global commit.gpgsign false` 를 해야함
+    - gpg키를 사용하신다면
+        1. `docker cp <path/to/key.asc> dequila_cont:/root/.gpg/<key.asc>`
+        2. 컨테이너 안에서 `gpg --import /root/.gpg/<key.asc>`
+        3. `gpg --list-secret-keys --keyid-format=long`으로 조회 후 아이디 해시를
+        4. `git config --global user.signingkey <KEY_ID_HASH>` 로 추가
+        5. `git config --global commit.gpgsign` 가 true인지 확인. 아니면 true로 설정
+        6. 커밋
 - 그만하기... 
     - 컨테이너를 켜둔 상태로 ./start 하면 컨테이너를 지우고 다시 시작함니다
     - 멈출 때는 `./stop.sh`
