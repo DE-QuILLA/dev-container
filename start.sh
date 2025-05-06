@@ -9,7 +9,6 @@ CURR_DIR=$(pwd)
 # Defaults 
 infra_path="$CURR_DIR"
 code_path="$CURR_DIR"
-helm_path="$CURR_DIR"
 pk_path=""
 # DO NOT USE SHIFT HERE! ❌
 
@@ -18,15 +17,14 @@ while getopts "i:c:m:k:h:" opt; do
     case $opt in
         i) infra_path="$OPTARG" ;;
         c) code_path="$OPTARG" ;;
-        m) helm_path="$OPTARG" ;;
         k) pk_path="$OPTARG" ;;
         h) 
-            echo "Usage: $0 -i <infra-gitops path> -c <code-task path> -m <helm project path> -k <private key path>"
+            echo "Usage: $0 -i <infra-gitops path> -c <code-task path> -k <private key path>"
             exit 0
             ;;
         \?) 
             echo "Invalid option: -$OPTARG" >&2
-            echo "Usage: $0 -i <infra-gitops path> -c <code-task path> -m <helm project path> -k <private key path>" >&2
+            echo "Usage: $0 -i <infra-gitops path> -c <code-task path> -k <private key path>" >&2
             exit 1 
             ;;
     esac
@@ -41,7 +39,7 @@ if [[ -n "$pk_path" ]]; then
 fi
 
 # Exist check
-if [ ! -d "$infra_path" ] || [ ! -d "$helm_path" ] || [ ! -d "$code_path" ]; then
+if [ ! -d "$infra_path" ] || [ ! -d "$code_path" ]; then
     echo "Error: Paths are not valid. Aborting..."
     exit 1
 fi
@@ -55,13 +53,11 @@ fi
 
 infra_path=$(realpath "$infra_path")
 code_path=$(realpath "$code_path")
-helm_path=$(realpath "$helm_path")
 pk_path=$(realpath "$pk_path")
 pk_basename=$(basename "$pk_path")
 
 # Paths inside the container
 infra_workdir="/app/infra-gitops"
-helm_workdir="/app/helm"
 code_workdir="/app/code-task"
 pk_mount="/root/.ssh/$pk_basename"
 
@@ -92,7 +88,6 @@ echo "Running container '$container_name'"
 docker run -dt --name "$container_name" --rm \
     -v "$code_path":"$code_workdir" \
     -v "$infra_path":"$infra_workdir" \
-    -v "$helm_path":"$helm_workdir" \
     -v "$pk_path":"$pk_mount" \
     -v "$pk_path.pub":"$pk_mount.pub" \
     "$image_name" \

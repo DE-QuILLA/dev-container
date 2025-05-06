@@ -1,8 +1,7 @@
 ### 사용법
-- 빌드, 런 포함 통합 커맨드 : `./start.sh -i <infra-gitops 프로젝트 경로> -c <code-task 프로젝트 경로> -m <helm 프로젝트 경로> -k <프라이빗 키 경로>`
+- 빌드, 런 포함 통합 커맨드 : `./start.sh -i <infra-gitops 프로젝트 경로> -c <code-task 프로젝트 경로> -k <프라이빗 키 경로>`
     - 기본적으로 필수 arg는 없음
     - -i, -c: infra repo, codetask 경로 입력 안하면 디폴트 ./로 입력됨. **깃리포여야 함**
-    - -m: helm 프로젝트의 경우는, infra 리포 안에 포함되는 부분일거 같아서 일단은 미구현 (디폴트 ./이고 프리커밋 설치 안됨)
     - -k: ssh 프라이빗키. **.pub 확장자를 빼고** 넣어야 함. ssh, 깃커밋/푸시용 -> -k 넣을 경우 유효성 검사함
     - -h: (한줄짜리)맨페이지
 - 이것저것 세팅 후 마지막으로 인터렉티브 bash 세션으로 진입함
@@ -11,6 +10,7 @@
     - 먼저 클러스터 프로비전 후, 
     - `kinit` 사용하면 kube config를 가져옴
     - 현재 `my-gke`, `my-code-vocab`으로 하드코딩 되어잇음 (클러스터 명, G프로젝트명 parameterize 필요)
+- helm 차트의 경우 infra-gitops/deploy 에 위치
 - vscode 연결
     - vscode 익스텐션에서 `dev container`를 설치
     - ctrl+shift+p (Mac은 cmd+shift+p)에서 `Dev containers: Attach to running containers` 선택
