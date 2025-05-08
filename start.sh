@@ -3,6 +3,9 @@
 image_name="dequila-image"
 container_name="dequila-cont"
 dockerfile_dir="."
+user=$(whoami)
+uid=$(id -u)
+gid=$(id -g)
 
 CURR_DIR=$(pwd)
 
@@ -59,12 +62,17 @@ pk_basename=$(basename "$pk_path")
 # Paths inside the container
 infra_workdir="/app/infra-gitops"
 code_workdir="/app/code-task"
-pk_mount="/root/.ssh/$pk_basename"
+pk_mount="/home/$user/.ssh/$pk_basename"
 
 # Check for image presence, decide whether or not to build
 if ! docker image inspect "$image_name" > /dev/null 2>&1; then
     echo "Image '$image_name' does not exist. Building..."
-    docker build -t "$image_name" "$dockerfile_dir" || { echo "Build failed"; exit 1; }
+    docker build -t "$image_name" \
+        --build-arg USER="$user" \
+        --build-arg USER_UID="$uid" \
+        --build-arg USER_GID="$gid" \
+        "$dockerfile_dir" \
+        || { echo "Build failed"; exit 1; }
 fi
 
 # Check for container presence and then run it... or not
@@ -98,13 +106,14 @@ docker exec -it "$container_name" /bin/bash -c "git config --global commit.gpgsi
 
 # Pre-commit pre-setup
 echo "Resolving dubious ownership on repos..."
-git_cmd="git config --global --add safe.directory $infra_workdir && git config --global --add safe.directory $code_workdir"
-docker exec -it "$container_name" /bin/bash -c "$git_cmd"
+git_cmd="git config --global --add safe.directory $infra_workdir && git config --global --add safe.directory $code_workdir "
+precommit_own="&& chown $user:$user $infra_workdir/.git/hooks/pre-commit && chown $user:$user $code_workdir"
+docker exec -it --user root "$container_name" /bin/bash -c "$git_cmd$precommit_own"
 
 # Pre-commit setup
 echo "Setting up pre-commit in repos"
 precommit_cmd="cd $infra_workdir && pre-commit install && cd $code_workdir && pre-commit install"
-docker exec -it "$container_name" /bin/bash -c "$precommit_cmd"
+docker exec -it --user root "$container_name" /bin/bash -c "$precommit_cmd"
 
 # Alias for fetching Kubectl config for later use
 echo "Adding aliases..."
@@ -118,4 +127,4 @@ docker exec --user root -it "$container_name" /bin/bash -c "$alias_cmd"
 
 # Open interactive session
 echo "Opening an interactive session..."
-docker exec -it "$container_name" /bin/bash
+docker exec --user "$user" -it "$container_name" /bin/bash

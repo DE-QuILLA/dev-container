@@ -5,14 +5,22 @@ ENV KUBECTL_VERSION=v1.31.0
 ENV TERRAFORM_VERSION=1.11.1
 ENV HELM_VERSION=3.16.4
 
+# Non root sudo
+ARG USER
+ARG USER_UID
+ARG USER_GID
+RUN groupadd --gid $USER_GID $USER \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USER
+
 # Prerequisite
 RUN apt-get update && apt-get install -y \
     apt-transport-https \
     ca-certificates \
     gnupg \
+    nano \
     curl \
     unzip \
-    git
+    git 
 
 # CLI setup
 RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
@@ -29,8 +37,7 @@ COPY ./requirements-dev.txt /app/requirements-dev.txt
 WORKDIR /app
 
 # gcloud setup
-RUN apt-get install google-cloud-cli-gke-gcloud-auth-plugin -y \
-&& gcloud auth activate-service-account --key-file=key.json 
+RUN apt-get install google-cloud-cli-gke-gcloud-auth-plugin -y
 
 # Kubectl setup
 RUN curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl \
@@ -50,11 +57,17 @@ RUN curl -sSL -o terraform_${TERRAFORM_VERSION}_linux_amd64.zip https://releases
     && mv terraform /usr/local/bin/ \
     && rm terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 
-# Python packages
-RUN pip install -r requirements-dev.txt
-
 # Aliases
 RUN echo 'source /etc/profile.d/motd.sh' >> /etc/bash.bashrc
+
+# Python packages
+RUN pip install -r requirements-dev.txt --no-cache-dir
+
+# User specific
+USER $USER
+RUN gcloud auth activate-service-account --key-file=key.json \
+    && sed -i 's/^#\s*\(force_color_prompt=yes\)/\1/' /home/${USER}/.bashrc
+# ENV PATH="/home/$USER/.local/bin:$PATH"
 
 # Default: allows for tidier commands
 ENTRYPOINT [ "/bin/bash", "-c" ]
