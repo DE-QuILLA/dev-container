@@ -71,6 +71,7 @@ if ! docker image inspect "$image_name" > /dev/null 2>&1; then
         --build-arg USER="$user" \
         --build-arg USER_UID="$uid" \
         --build-arg USER_GID="$gid" \
+        --build-arg PROJECT_ID=$(grep '"project_id"' key.json | head -1 | sed -E 's/.*: "(.*)",?/\1/')
         "$dockerfile_dir" \
         || { echo "Build failed"; exit 1; }
 fi
@@ -119,7 +120,7 @@ docker exec -it --user root "$container_name" /bin/bash -c "$precommit_cmd"
 echo "Adding aliases..."
 cluster_name="my-gke"
 region_name="asia-northeast3"
-project_name="my-code-vocab"
+project_name="Dequila-Project"
 get_conf="gcloud container clusters get-credentials $cluster_name --region $region_name --project $project_name"
 alias="alias kinit='$get_conf'"
 alias_cmd="echo \"$alias\" >> /etc/bash.bashrc"

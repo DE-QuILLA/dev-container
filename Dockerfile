@@ -9,6 +9,7 @@ ENV HELM_VERSION=3.16.4
 ARG USER
 ARG USER_UID
 ARG USER_GID
+ARG PROJECT_ID
 RUN groupadd --gid $USER_GID $USER \
     && useradd --uid $USER_UID --gid $USER_GID -m $USER
 
@@ -20,7 +21,7 @@ RUN apt-get update && apt-get install -y \
     nano \
     curl \
     unzip \
-    git 
+    git
 
 # CLI setup
 RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
@@ -66,6 +67,7 @@ RUN pip install -r requirements-dev.txt --no-cache-dir
 # User specific
 USER $USER
 RUN gcloud auth activate-service-account --key-file=key.json \
+    && gcloud --quiet config set project ${PROJECT_ID} \
     && sed -i 's/^#\s*\(force_color_prompt=yes\)/\1/' /home/${USER}/.bashrc
 # ENV PATH="/home/$USER/.local/bin:$PATH"
 
