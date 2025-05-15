@@ -1,7 +1,8 @@
 ### 사용법
+- 먼저
+    - GCP 루트가 공유한 SA 키 (key.json)가 이 디렉터리에 존재해야함 **(이름을 바꾼 경우 .gitignore 추가)**
+    - GCP 루트가 API를 gcloud services enable 해야함: [compute|container|iam|storage|sql-component].googleapis.com
 - 빌드, 런 포함 통합 커맨드 : `./start.sh -i <infra-gitops 프로젝트 경로> -c <code-task 프로젝트 경로> -k <프라이빗 키 경로>`
-    - 먼저 gcp 계정 소유자가 공유한 SA 키 (key.json)이 이 디렉터리에 존재해야함 **(이름을 바꾼 경우 .gitignore 추가)**
-    - ~~jq 필요함 `sudo apt update && sudo apt install -y jq`~~
     - 기본적으로 필수 arg는 없음
     - -i, -c: infra repo, codetask 경로 입력 안하면 디폴트 ./로 입력됨. **깃리포여야 함**
     - -k: ssh 프라이빗키. **.pub 확장자를 빼고** 넣어야 함. ssh, 깃커밋/푸시용 -> -k 넣을 경우 유효성 검사함

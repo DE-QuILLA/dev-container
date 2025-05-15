@@ -18,5 +18,5 @@ pre-commit --version
 helm version | grep -oP 'Version:\s*"\K[^"]+' | head -n1 | xargs -I{} echo "helm: {}"
 
 # Instructions
-echo -e "\033[38;5;45m1. Provision your cluster\033[0m"
-echo -e "\033[38;5;45m2. Use alias 'kinit' to fetch kube config!\033[0m"
+echo -e "\033[38;5;45m1. Terraform으로 클러스터 프로비전 이후,\033[0m"
+echo -e "\033[38;5;45m2. 앨리어스 'kinit'로 kubeconfig를 가져옵니다\033[0m"
