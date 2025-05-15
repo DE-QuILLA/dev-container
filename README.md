@@ -12,7 +12,7 @@
 - kubectl:
     - 먼저 클러스터 프로비전 후, 
     - `kinit` 사용하면 kube config를 가져옴
-    - 현재 `my-gke`, `my-code-vocab`으로 하드코딩 되어잇음 (클러스터 명, G프로젝트명 parameterize 필요)
+    - 현재 클러스터명은 `my-gke` 으로 **하드코딩** 되어잇음 (parameterize 필요)
 - helm 차트의 경우 infra-gitops/deploy 에 위치
 - vscode 연결
     - vscode 익스텐션에서 `dev container`를 설치
