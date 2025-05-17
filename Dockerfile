@@ -10,8 +10,8 @@ ARG USER
 ARG USER_UID
 ARG USER_GID
 ARG PROJECT_ID
-RUN groupadd --gid $USER_GID $USER \
-    && useradd --uid $USER_UID --gid $USER_GID -m $USER
+RUN getent group ${USER_GID} || groupadd --gid ${USER_GID} ${USER} \
+    && useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USER}
 
 # Prerequisite
 RUN apt-get update && apt-get install -y \
