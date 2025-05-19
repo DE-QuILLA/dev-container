@@ -1,22 +1,21 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
+# Init
 image_name="dequila-image"
 container_name="dequila-cont"
 dockerfile_dir="."
 user=$(whoami)
 uid=$(id -u)
 gid=$(id -g)
-
 CURR_DIR=$(pwd)
-
-# Defaults 
-infra_path="$CURR_DIR"
-code_path="$CURR_DIR"
+infra_path=""
+code_path=""
 pk_path=""
+PROJECT_ID=$(grep '"project_id"' key.json | head -1 | sed -E 's/.*: "(.*)",?/\1/')
 # DO NOT USE SHIFT HERE! ❌
 
 # Dashed args parsing
-while getopts "i:c:m:k:h:" opt; do
+while getopts "i:c:k:h:" opt; do
     case $opt in
         i) infra_path="$OPTARG" ;;
         c) code_path="$OPTARG" ;;
@@ -33,6 +32,18 @@ while getopts "i:c:m:k:h:" opt; do
     esac
 done
 
+# Required arguments
+if [ -z "$infra_path" ] || [ -z "$code_path" ]; then
+    echo -e "\033[38;5;160m-i infra/repo/path and -c code/repo/path are required\033[0m"
+    exit 1
+fi
+
+# No key path -> use any key
+if [[ -z "$pk_path" ]]; then
+    pk_path=$(find "$HOME/.ssh" -type f -name "id*" ! -name "*.pub" -print -quit)
+    echo "No key was provided. Using key $pk_path"
+fi
+
 # ssh key validity check
 if [[ -n "$pk_path" ]]; then
     if ! ssh-keygen -l -f "$pk_path" >/dev/null 2>&1; then
@@ -48,7 +59,6 @@ if [ ! -d "$infra_path" ] || [ ! -d "$code_path" ]; then
 fi
 
 # is-git-repo check. Prereq for pre-commit install
-# Currently it doesn't account for the helm path
 if [ ! -d "$infra_path/.git" ] || [ ! -d "$code_path/.git" ]; then
     echo "👺 Some of the paths are not Git repo. Aborting..." >&2
     exit 1
@@ -71,7 +81,6 @@ if ! docker image inspect "$image_name" > /dev/null 2>&1; then
         --build-arg USER="$user" \
         --build-arg USER_UID="$uid" \
         --build-arg USER_GID="$gid" \
-        --build-arg PROJECT_ID=$(grep '"project_id"' key.json | head -1 | sed -E 's/.*: "(.*)",?/\1/')
         "$dockerfile_dir" \
         || { echo "Build failed"; exit 1; }
 fi
@@ -120,8 +129,7 @@ docker exec -it --user root "$container_name" /bin/bash -c "$precommit_cmd"
 echo "Adding aliases..."
 cluster_name="my-gke"
 region_name="asia-northeast3"
-project_name="Dequila-Project"
-get_conf="gcloud container clusters get-credentials $cluster_name --region $region_name --project $project_name"
+get_conf="gcloud container clusters get-credentials $cluster_name --region $region_name --project $PROJECT_ID"
 alias="alias kinit='$get_conf'"
 alias_cmd="echo \"$alias\" >> /etc/bash.bashrc"
 docker exec --user root -it "$container_name" /bin/bash -c "$alias_cmd"
