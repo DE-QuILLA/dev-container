@@ -78,11 +78,11 @@ pk_mount="/home/$user/.ssh/$pk_basename"
 if ! docker image inspect "$image_name" > /dev/null 2>&1; then
     echo "Image '$image_name' does not exist. Building..."
     docker build -t "$image_name" \
-        --build-arg USER="$user" \
-        --build-arg USER_UID="$uid" \
-        --build-arg USER_GID="$gid" \
-        "$dockerfile_dir" \
-        || { echo "Build failed"; exit 1; }
+    --build-arg USER="$user" \
+    --build-arg USER_UID="$uid" \
+    --build-arg USER_GID="$gid" \
+    "$dockerfile_dir" \
+    || { echo "Build failed"; exit 1; }
 fi
 
 # Check for container presence and then run it... or not
