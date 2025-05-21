@@ -36,6 +36,9 @@
     - 노션의 gke 접근 문서 참조
     - key.json은 빌드타임에 컨테이너 안에 들어감
 
+### 어
+- 컨테이너로 attach 후 vscode 터미널이 bash가 아닌 sh셸을 사용함($) -> /bin/bash 입력
+
 ### TODOs
 - [x] install script
 - [x] start script / inclusive with install script
