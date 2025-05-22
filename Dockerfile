@@ -14,13 +14,8 @@ RUN getent group ${USER_GID} || groupadd --gid ${USER_GID} ${USER} \
 
 # Prerequisite
 RUN apt-get update && apt-get install -y \
-    apt-transport-https \
-    ca-certificates \
-    gnupg \
-    nano \
-    curl \
-    unzip \
-    git
+    apt-transport-https ca-certificates \
+    gnupg nano curl unzip git tar
 
 # CLI setup
 RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
@@ -56,6 +51,15 @@ RUN curl -sSL -o terraform_${TERRAFORM_VERSION}_linux_amd64.zip https://releases
     && unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
     && mv terraform /usr/local/bin/ \
     && rm terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+
+# Go setup
+RUN curl -L -o /usr/local/go1.24.3.linux-amd64.tar.gz https://go.dev/dl/go1.24.3.linux-amd64.tar.gz \
+    && tar -C /usr/local -xzf /usr/local/go1.24.3.linux-amd64.tar.gz \
+    && rm /usr/local/go1.24.3.linux-amd64.tar.gz
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+# kubeval (kubeconform) setup
+RUN go install github.com/yannh/kubeconform/cmd/kubeconform@latest
 
 # Aliases
 RUN echo 'source /etc/profile.d/motd.sh' >> /etc/bash.bashrc

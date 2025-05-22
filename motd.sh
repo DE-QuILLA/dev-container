@@ -16,6 +16,7 @@ gcloud --version 2>&1 | grep -i update
 terraform --version | grep v1.1
 pre-commit --version
 helm version | grep -oP 'Version:\s*"\K[^"]+' | head -n1 | xargs -I{} echo "helm: {}"
+go version
 
 # Instructions
 echo -e "\033[38;5;45m1. Terraform으로 클러스터 프로비전 이후,\033[0m"

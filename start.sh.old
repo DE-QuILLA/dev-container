@@ -1,44 +1,45 @@
 #!/usr/bin/env bash
 
 # Init
-org_name="dequila"
-image_name="$org_name-image"
-container_name="$org_name-cont"
+image_name="dequila-image"
+container_name="dequila-cont"
 dockerfile_dir="."
 user=$(whoami)
 uid=$(id -u)
 gid=$(id -g)
 CURR_DIR=$(pwd)
-org_path=""
+infra_path=""
+code_path=""
 pk_path=""
 PROJECT_ID=$(grep '"project_id"' key.json | head -1 | sed -E 's/.*: "(.*)",?/\1/')
 # DO NOT USE SHIFT HERE! ❌
 
 # Dashed args parsing
-while getopts "o:k:h:" opt; do
+while getopts "i:c:k:h:" opt; do
     case $opt in
-        o) org_path="$OPTARG" ;;
+        i) infra_path="$OPTARG" ;;
+        c) code_path="$OPTARG" ;;
         k) pk_path="$OPTARG" ;;
         h) 
-            echo "Usage: $0 -o <organization path> -k <private key path>"
+            echo "Usage: $0 -i <infra-gitops path> -c <code-task path> -k <private key path>"
             exit 0
             ;;
         \?) 
             echo "Invalid option: -$OPTARG" >&2
-            echo "Usage: $0 -o <organization path> -k <private key path>" >&2
+            echo "Usage: $0 -i <infra-gitops path> -c <code-task path> -k <private key path>" >&2
             exit 1 
             ;;
     esac
 done
 
 # Required arguments
-if [ -z "$org_path" ]; then
-    echo -e "\033[38;5;160m-o [organization/dir/path] is required\033[0m"
+if [ -z "$infra_path" ] || [ -z "$code_path" ]; then
+    echo -e "\033[38;5;160m-i infra/repo/path and -c code/repo/path are required\033[0m"
     exit 1
 fi
 
 # No key path -> use any key
-if [ -z "$pk_path" ]; then
+if [[ -z "$pk_path" ]]; then
     pk_path=$(find "$HOME/.ssh" -type f -name "id*" ! -name "*.pub" -print -quit)
     echo "No key was provided. Using key $pk_path"
 fi
@@ -52,25 +53,25 @@ if [[ -n "$pk_path" ]]; then
 fi
 
 # Exist check
-if [[ ! -d "$org_path" ]]; then
-    echo "Error: Organization path  not valid. Aborting..."
+if [ ! -d "$infra_path" ] || [ ! -d "$code_path" ]; then
+    echo "Error: Paths are not valid. Aborting..."
     exit 1
 fi
 
-# Valid org check
-gfound=$(find "$org_path"/* -maxdepth 0 -type d -exec test -d "{}/.git" \; -print)
-if [ -z "$gfound" ]; then
-    echo "❌ No Git repos found under $org_path"
+# is-git-repo check. Prereq for pre-commit install
+if [ ! -d "$infra_path/.git" ] || [ ! -d "$code_path/.git" ]; then
+    echo "👺 Some of the paths are not Git repo. Aborting..." >&2
     exit 1
-fi 
+fi
 
-
-org_path=$(realpath "$org_path")
+infra_path=$(realpath "$infra_path")
+code_path=$(realpath "$code_path")
 pk_path=$(realpath "$pk_path")
 pk_basename=$(basename "$pk_path")
 
 # Paths inside the container
-org_workdir="/app/$org_name"
+infra_workdir="/app/infra-gitops"
+code_workdir="/app/code-task"
 pk_mount="/home/$user/.ssh/$pk_basename"
 
 # Check for image presence, decide whether or not to build
@@ -103,35 +104,32 @@ fi
 # Run the container if all else went well
 echo "Running container '$container_name'"
 docker run -dt --name "$container_name" --rm \
-    -v "$org_path":"$org_workdir" \
+    -v "$code_path":"$code_workdir" \
+    -v "$infra_path":"$infra_workdir" \
     -v "$pk_path":"$pk_mount" \
     -v "$pk_path.pub":"$pk_mount.pub" \
     "$image_name" \
     "tail -f /dev/null"
 
 # Setup git to use ssh key
-docker exec -it --user "$user" "$container_name" /bin/bash -c "git config --global commit.gpgsign false"
+docker exec -it "$container_name" /bin/bash -c "git config --global commit.gpgsign false"
 
-# Pre-commit pre-setup and setup
+# Pre-commit pre-setup
 echo "Resolving dubious ownership on repos..."
-for dir in "$org_path"/*/; do
-    if [ -d "${dir}.git" ]; then
-        target="$org_workdir/$(basename "$dir")"
-        if [ -f "${target}/.git/hooks/pre-commit" ]; then
-            git_cmd="git config --global --add safe.directory $target"
-            precommit_own="&& chown $user:$user ${target}/.git/hooks/pre-commit"
-            docker exec -it --user root "$container_name" /bin/bash -c "$git_cmd $precommit_own"
-            precommit_cmd="cd ${target} && pre-commit install"
-            docker exec -it --user root "$container_name" /bin/bash -c "$precommit_cmd"
-        fi
-    fi
-done
+git_cmd="git config --global --add safe.directory $infra_workdir && git config --global --add safe.directory $code_workdir "
+precommit_own="&& chown $user:$user $infra_workdir/.git/hooks/pre-commit && chown $user:$user $code_workdir"
+docker exec -it --user root "$container_name" /bin/bash -c "$git_cmd$precommit_own"
+
+# Pre-commit setup
+echo "Setting up pre-commit in repos"
+precommit_cmd="cd $infra_workdir && pre-commit install && cd $code_workdir && pre-commit install"
+docker exec -it --user root "$container_name" /bin/bash -c "$precommit_cmd"
 
 # Inject git identity to /home/user/.gitconfig (inside the container)
 gname=$(git config --global user.name || id -un)
 gemail=$(git config --global user.email)
 gident_cmd="git config --global user.name $gname && git config --global user.email $gemail"
-docker exec -it --user "$user" "$container_name" /bin/bash -c "$gident_cmd"
+docker exec it --user "$user" -it "$container_name" /bin/bash -c "$gident_cmd"
 
 # Alias for fetching Kubectl config for later use
 echo "Adding aliases..."
