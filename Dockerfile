@@ -52,14 +52,11 @@ RUN curl -sSL -o terraform_${TERRAFORM_VERSION}_linux_amd64.zip https://releases
     && mv terraform /usr/local/bin/ \
     && rm terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 
-# Go setup
-RUN curl -L -o /usr/local/go1.24.3.linux-amd64.tar.gz https://go.dev/dl/go1.24.3.linux-amd64.tar.gz \
-    && tar -C /usr/local -xzf /usr/local/go1.24.3.linux-amd64.tar.gz \
-    && rm /usr/local/go1.24.3.linux-amd64.tar.gz
-ENV PATH="/usr/local/go/bin:${PATH}"
-
 # kubeval (kubeconform) setup
-RUN go install github.com/yannh/kubeconform/cmd/kubeconform@latest
+RUN curl -Lo ./kubeconform-linux-amd64.tar.gz https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz \
+    && tar -xzf kubeconform-linux-amd64.tar.gz \
+    && mv kubeconform /usr/local/bin/ \
+    && rm kubeconform-linux-amd64.tar.gz
 
 # Aliases
 RUN echo 'source /etc/profile.d/motd.sh' >> /etc/bash.bashrc
