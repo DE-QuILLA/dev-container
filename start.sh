@@ -124,6 +124,11 @@ for dir in "$org_path"/*/; do
             precommit_cmd="cd ${target} && pre-commit install"
             docker exec -it --user root "$container_name" /bin/bash -c "$precommit_cmd"
         fi
+        if [ -f "${target}/.ruff_cache" ]; then
+            own_cmd="chown -R $user:$user ${target}/.ruff_cache"
+            mod_cmd="chmod -R 770 ${target}/.ruff_cache"
+            docker exec -it --user root "$container_name" /bin/bash -c "$own_cmd && $mod_cmd"
+        fi
     fi
 done
 
