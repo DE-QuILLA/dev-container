@@ -140,7 +140,7 @@ docker exec -it --user "$user" "$container_name" /bin/bash -c "$gident_cmd"
 
 # Alias for fetching Kubectl config for later use
 echo "Adding aliases..."
-cluster_name="my-gke"
+cluster_name="deq_gke_cluster"
 region_name="asia-northeast3"
 get_conf="gcloud container clusters get-credentials $cluster_name --region $region_name --project $PROJECT_ID"
 alias="alias kinit='$get_conf'"
